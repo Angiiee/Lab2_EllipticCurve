@@ -131,17 +131,16 @@ public final class IntegerFunctions {
 
         // iteration
         while (n.compareTo(ONE) == 1) { // n > 1
-            System.out.println("k" + k);
 
             k = n; // k = n
             t = s; // t = s
             s = 0;
 
-//            while (!k.equals(ONE)) { // k != 1
-//                k = k.multiply(k).remainder(p); // k = k^2 % p
-//                s++; // s = s + 1
-//                System.out.println("456");
-//            }
+            while (!k.equals(ONE)) { // k != 1
+                k = k.multiply(k).remainder(p); // k = k^2 % p
+                s++; // s = s + 1
+                System.out.println("456");
+            }
 
             t -= s; // t = t - s
             if (t == 0) {

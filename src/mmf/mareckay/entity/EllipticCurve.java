@@ -77,7 +77,7 @@ public class EllipticCurve {
 
     private ArrayList<Point> processContainedPoints() {
         ArrayList<Point> allPoints = new ArrayList<>();
-        allPoints.add(new Point(0,0));
+        allPoints.add(new Point(0, 0));
         for (int i = 1; i < p_coefficient; ++i) {
             long newParam = IntegerFunctions.prepareParam(a_coefficient, b_coefficient, i);
             if (IntegerFunctions.isSolutionExists(newParam, p_coefficient)) {
@@ -102,9 +102,33 @@ public class EllipticCurve {
 
     public Point addPoint(Point p, Point q) {
         Point result = new Point();
-        double alfa = (p.getY() - q.getY()) / (p.getX() - q.getX());
-        result.setX(Math.pow(alfa, 2) - p.getX() - q.getX());
-        result.setY(-p.getY() + alfa * (p.getX() - result.getX()));
+        double px = p.getX();
+        double py = p.getY();
+        double qx = q.getX();
+        double qy = q.getY();
+
+        double rx = 0;
+        double ry = 0;
+
+        if (px == qx) {
+            if (py == -qy) {
+                rx = 0;
+                ry = 0;
+            } else if (py == qy && py != 0 && qy != 0) {
+                double alfa = (3 * px * px) / (2 * py * py);
+                rx = Math.pow(alfa, 2) - 2 * px;
+                ry = -py + alfa * (px - rx);
+            } else if (py == qy && py == 0 && qy == 0) {
+                rx = 0;
+                ry = 0;
+            }
+        } else {
+            double alfa = (py - qy) / (px - qx);
+            rx = Math.pow(alfa, 2) - px - qx;
+            ry = -py + alfa * (px - rx);
+        }
+        result.setX(rx);
+        result.setY(ry);
         return result;
     }
 
@@ -114,53 +138,25 @@ public class EllipticCurve {
         return tmp1 % p_coefficient == tmp2 % p_coefficient;
     }
 
-    //
-    static long pow_mod(long x, long n, long p) {
-        if (n == 0) return 1;
-        if ((n & 1) == 0)
-            return (pow_mod(x, n - 1, p) * x) % p;
-        x = pow_mod(x, n / 2, p);
-        return (x * x) % p;
-    }
-
-    /* Takes as input an odd prime p and n < p and returns r
-     * such that r * r = n [mod p]. */
-    public static long tonelli_shanks(long n, long p) {
-        long s = 0;
-        long q = p - 1;
-        while ((q & 1) == 0) {
-            q /= 2;
-            ++s;
-        }
-        if (s == 1) {
-            long r = pow_mod(n, (p + 1) / 4, p);
-            if ((r * r) % p == n) return r;
-            return 0;
-        }
-        // Find the first quadratic non-residue z by brute-force search
-        long z = 1;
-
-        while (pow_mod(++z, (p - 1) / 2, p) != p - 1) ;
-        long c = pow_mod(z, q, p);
-        long r = pow_mod(n, (q + 1) / 2, p);
-        long t = pow_mod(n, q, p);
-        long m = s;
-        while (t != 1) {
-            long tt = t;
-            long i = 0;
-            while (tt != 1) {
-                tt = (tt * tt) % p;
-                ++i;
-                if (i == m) return 0;
+    public int getOrder(Point p) {
+        boolean flag = false;
+        int N = this.containedPoints.size();
+        int i = N;
+        for (int j = 1; j <= N; j++) {
+            if (N % j == 0) {
+                Point ptmp = p;
+                do {
+                    ptmp = addPoint(p, ptmp);
+                    j--;
+                } while (j > 0);
+                if (ptmp.getX() == 0 && ptmp.getY() == 0) {
+                    i = j;
+                    flag = true;
+                    break;
+                }
             }
-            long b = pow_mod(c, pow_mod(2, m - i - 1, p - 1), p);
-            long b2 = (b * b) % p;
-            r = (r * b) % p;
-            t = (t * b2) % p;
-            c = b2;
-            m = i;
         }
-        return r;
-        //return 0;
+        return i;
     }
+
 }
